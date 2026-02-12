@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Valentine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE STYLES --- */
+        :root {
+            --bg-color: #fdfbf7;
+            --primary-red: #d32f2f;
+            --text-color: #5a3e36;
+            --paper-texture: url("https://www.transparenttextures.com/patterns/cream-paper.png");
+            --transition-speed: 0.5s;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            margin: 0;
+            background-color: #ffe6e6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Playfair Display', serif;
+            overflow: hidden;
+        }
+
+        /* --- LAYOUT CONTAINERS --- */
+        .app-container {
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            max-height: 750px;
+            background-color: var(--bg-color);
+            background-image: var(--paper-texture);
+            border: 8px solid white;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
+
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: var(--bg-color);
+            z-index: 10;
+            opacity: 0;
+            transition: opacity var(--transition-speed) ease-in-out;
+        }
+        
+        .screen.active { display: flex; opacity: 1; }
+
+        /* --- DECORATIONS --- */
+        .floral-frame {
+            position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 2px solid var(--primary-red); border-radius: 15px;
+            z-index: 100; pointer-events: none;
+        }
+        .flower-corner { position: absolute; font-size: 2rem; z-index: 101; pointer-events: none; }
+        .top-left { top: 15px; left: 15px; transform: rotate(-45deg); }
+        .top-right { top: 15px; right: 15px; transform: rotate(45deg); }
+        .bottom-left { bottom: 15px; left: 15px; transform: rotate(-135deg); }
+        .bottom-right { bottom: 15px; right: 15px; transform: rotate(135deg); }
+
+        body.modal-open .floral-frame, body.modal-open .flower-corner { display: none; }
+
+        /* --- ENVELOPE --- */
+        .envelope-wrapper {
+            margin-top: 40px; cursor: pointer; position: relative;
+            width: 380px; height: 253px; perspective: 1500px;
+            filter: drop-shadow(0 15px 30px rgba(0,0,0,0.2));
+        }
+        .envelope-base-img { width: 100%; height: 100%; position: absolute; z-index: 2; object-fit: contain; }
+        .envelope-flap-img {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 4; overflow: hidden;
+            clip-path: polygon(0% 0%, 100% 0%, 50% 59%); 
+            transform-origin: top; transition: transform var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .envelope-flap-img img { width: 100%; height: 100%; object-fit: contain; }
+        .envelope-wrapper.open .envelope-flap-img { transform: rotateX(180deg); }
+        .letter-preview {
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            width: 75%; background: transparent; z-index: 1; pointer-events: none;
+            transition: all var(--transition-speed) ease 0.2s;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Sacramento'; font-size: 2.4rem; color: #ffffff;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+        }
+        .envelope-wrapper.open .letter-preview { transform: translate(-50%, -190%); color: #c62828; text-shadow: none; }
+
+        /* --- MODALS --- */
+        .modal { 
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: white; z-index: 2000; flex-direction: column; align-items: center; 
+            justify-content: flex-start; padding-top: 20px;
+            opacity: 0; transition: opacity var(--transition-speed) ease-in-out;
+        }
+        .modal.active { display: flex; opacity: 1; }
+        .close-btn {
+            position: absolute; top: 15px; right: 15px; color: var(--primary-red);
+            font-size: 3rem; cursor: pointer; z-index: 2100; line-height: 1;
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* --- SCRAPBOOK & COLLAGE --- */
+        .scrapbook-container {
+            width: 350px; height: 600px; position: relative; background: white;
+            border: 5px dashed var(--primary-red); border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1); padding: 10px; overflow: hidden;
+            margin-top: 40px; display: flex; flex-direction: column;
+            justify-content: space-between; align-items: center;
+        }
+
+        .collage-header {
+            width: 100%; text-align: center; margin-bottom: 20px;
+            font-family: 'Sacramento', cursive; font-size: 2.5rem; color: var(--primary-red); z-index: 5;
+        }
+
+        .photo-polaroid {
+            position: absolute; width: 120px; height: 150px; background: white;
+            padding: 6px 6px 20px 6px; box-shadow: 2px 4px 10px rgba(0,0,0,0.15);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); cursor: zoom-in; z-index: 10;
+        }
+        .photo-polaroid img { width: 100%; height: 100%; object-fit: cover; border: 1px solid #f0f0f0; }
+        
+        .photo-polaroid.expanded {
+            top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important;
+            transform: rotate(0deg) !important; z-index: 2200 !important; padding: 0 !important;
+            border-radius: 13px; cursor: zoom-out;
+        }
+        
+        /* HOVER STATES */
+        .p-top-left { top: 110px; left: 10px; transform: rotate(-6deg); }
+        .p-top-left:hover { transform: scale(1.1) rotate(-6deg); z-index: 20; }
+
+        .p-top-right { top: 110px; right: 10px; transform: rotate(4deg); }
+        .p-top-right:hover { transform: scale(1.1) rotate(4deg); z-index: 20; }
+
+        .p-center { top: 52%; left: 50%; transform: translate(-50%, -40%); width: 130px; height: 160px; z-index: 15; }
+        .p-center:hover { transform: translate(-50%, -40%) scale(1.1); z-index: 20; }
+
+        .p-bot-left { bottom: 30px; left: 10px; transform: rotate(5deg); }
+        .p-bot-left:hover { transform: scale(1.1) rotate(5deg); z-index: 20; }
+
+        .p-bot-right { bottom: 30px; right: 10px; transform: rotate(-5deg); }
+        .p-bot-right:hover { transform: scale(1.1) rotate(-5deg); z-index: 20; }
+
+        /* Video Styles */
+        .video-wrapper { width: 100%; padding: 5px; display: flex; justify-content: center; }
+        video { width: auto; max-width: 100%; max-height: 510px; border-radius: 15px; border: 2px solid #eee; }
+
+        /* --- UPDATED LETTER STYLES --- */
+        .letter-paper {
+            background: #fffdf0; padding: 30px; width: 100%; height: 100%; border-radius: 5px;
+            font-family: 'Sacramento', cursive; font-size: 1.6rem; color: #4a3b3b;
+            text-align: center; line-height: 1.5; overflow-y: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            transition: all 0.5s ease; cursor: zoom-in; position: relative;
+        }
+        
+        .letter-paper.expanded {
+            position: fixed;
+            top: 50%; 
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%; 
+            max-width: 700px;
+            height: auto;
+            max-height: 90vh;
+            z-index: 2500;
+            border-radius: 10px;
+            padding: 50px;
+            font-size: 2.2rem;
+            line-height: 1.6;
+            display: block; 
+            overflow-y: auto; 
+            cursor: zoom-out;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+            border: 1px solid #e0d0c0;
+        }
+
+        /* --- SHUFFLE DECK STYLES --- */
+        .shuffle-container { position: relative; width: 280px; height: 400px; margin-top: 10px; perspective: 1000px; }
+        
+        .shuffle-card {
+            position: absolute; width: 100%; height: 100%; background: white;
+            border: 8px solid white; border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); cursor: pointer;
+            transition: transform 0.4s ease-in, opacity 0.4s ease-in;
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+            user-select: none;
+        }
+        .shuffle-card img, .shuffle-card video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+        
+        .shuffle-card.error-card { background: #ffcdd2; border-color: red; }
+        .error-msg { font-size: 14px; color: red; text-align: center; padding: 10px; font-family: sans-serif; }
+
+        /* Z-INDEX FOR 11 CARDS */
+        .shuffle-card:nth-child(1)  { z-index: 11; transform: rotate(-6deg); }
+        .shuffle-card:nth-child(2)  { z-index: 10; transform: rotate(5deg); }
+        .shuffle-card:nth-child(3)  { z-index: 9;  transform: rotate(-4deg); }
+        .shuffle-card:nth-child(4)  { z-index: 8;  transform: rotate(3deg); }
+        .shuffle-card:nth-child(5)  { z-index: 7;  transform: rotate(-5deg); }
+        .shuffle-card:nth-child(6)  { z-index: 6;  transform: rotate(2deg); }
+        .shuffle-card:nth-child(7)  { z-index: 5;  transform: rotate(-3deg); }
+        .shuffle-card:nth-child(8)  { z-index: 4;  transform: rotate(4deg); }
+        .shuffle-card:nth-child(9)  { z-index: 3;  transform: rotate(-2deg); }
+        .shuffle-card:nth-child(10) { z-index: 2;  transform: rotate(6deg); }
+        .shuffle-card:nth-child(11) { z-index: 1;  transform: rotate(0deg); background: black; } 
+
+        .shuffle-card.swipe { 
+            transform: translateX(200%) rotate(30deg) !important; 
+            opacity: 0 !important; 
+            pointer-events: none !important; 
+        }
+
+        /* --- POPUP BOUQUET & CONFETTI --- */
+        #bouquet-popup {
+            position: absolute; 
+            top: 0; 
+            left: 0;
+            width: 100%; 
+            height: 100%; 
+            transform: scale(0);
+            z-index: 500;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: var(--bg-color);
+            border-radius: 10px;
+        }
+        #bouquet-popup.pop { transform: scale(1); }
+        
+        .bouquet-img {
+            width: 90%; height: 85%;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+
+        .confetti-piece {
+            position: absolute; width: 100%; height: 10px;
+            background: #ffd700; top: -10px; z-index: 2999;
+            opacity: 0;
+        }
+
+        /* --- UI ELEMENTS --- */
+        .btn { background: var(--primary-red); color: white; border: none; padding: 12px 30px; border-radius: 25px; font-size: 1rem; cursor: pointer; margin-top: 10px; font-family: 'Poppins', sans-serif; }
+        .btn-back { background: transparent; border: none; color: #8a6a6a; font-family: 'Poppins', sans-serif; font-size: 0.9rem; cursor: pointer; margin-top: 20px; text-decoration: underline; opacity: 0.8; }
+        h1 { font-family: 'Sacramento', cursive; color: var(--primary-red); font-size: 3rem; margin-bottom: 10px; text-align: center; }
+        p { color: var(--text-color); text-align: center; font-size: 1rem; line-height: 1.6; margin-bottom: 20px; }
+        .gift-grid { display: flex; gap: 15px; margin: 20px 0; }
+        .gift-box { width: 85px; height: 110px; background: #ffcdd2; display: flex; align-items: center; justify-content: center; font-size: 2rem; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        .music-widget { background: #b71c1c; padding: 20px; border-radius: 15px; width: 100%; display: flex; flex-direction: column; align-items: center; color: white; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .vinyl { width: 100px; height: 100px; background: #111; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; animation: spin 4s linear infinite; animation-play-state: paused; }
+        .vinyl.playing { animation-play-state: running; }
+        .vinyl-inner { width: 35px; height: 35px; background: #d32f2f; border-radius: 50%; border: 2px solid white; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="floral-frame"></div>
+        <div class="flower-corner top-left">🌹</div>
+        <div class="flower-corner top-right">🌹</div>
+        <div class="flower-corner bottom-left">🌹</div>
+        <div class="flower-corner bottom-right">🌹</div>
+
+        <div id="screen-envelope" class="screen active">
+            <h1>Love Mail</h1>
+            <p>Click to open...</p>
+            <div class="envelope-wrapper" onclick="openEnvelope()">
+                <img src="rede.png" class="envelope-base-img">
+                <div class="envelope-flap-img"><img src="rede.png"></div>
+                <div class="letter-preview">For You ❤️</div>
+            </div>
+        </div>
+
+        <div id="screen-letter" class="screen">
+            <h1>My Dearest,</h1>
+            <p>I just wanted to take a moment to tell you how much you mean to me.</p>
+            <button class="btn" onclick="showScreen('screen-ask')">Continue</button>
+        </div>
+
+        <div id="screen-ask" class="screen">
+            <h1>Will you be my Valentine?</h1>
+            <div style="display:flex; gap:15px; margin-top:20px;">
+                <button class="btn" id="yesBtn" onclick="showScreen('screen-gifts')">YES</button>
+                <button class="btn" id="noBtn" onclick="moveNoButton()">NO</button>
+            </div>
+        </div>
+
+        <div id="screen-gifts" class="screen">
+            <h1>Surprise!</h1>
+            <p>Tap a card:</p>
+            <div class="gift-grid">
+                <div class="gift-box" onclick="openModal('modal-photos')">📸</div>
+                <div class="gift-box" onclick="openModal('modal-video')">🎥</div>
+                <div class="gift-box" onclick="openModal('modal-letter')">💌</div>
+            </div>
+            <button class="btn" onclick="showScreen('screen-music')">Next: Our Song</button>
+        </div>
+
+        <div id="modal-photos" class="modal">
+            <div class="close-btn" onclick="closeModal('modal-photos')">&times;</div>
+            <div class="scrapbook-container">
+                <h2 class="collage-header">Our Favorite Moments</h2>
+                <div class="photo-polaroid p-top-left" onclick="toggleExpand(this)"><img src="date2.png"></div>
+                <div class="photo-polaroid p-top-right" onclick="toggleExpand(this)"><img src="date1.png"></div>
+                <div class="photo-polaroid p-center" onclick="toggleExpand(this)"><img src="bedtime.png"></div>
+                <div class="photo-polaroid p-bot-left" onclick="toggleExpand(this)"><img src="date3.png"></div>
+                <div class="photo-polaroid p-bot-right" onclick="toggleExpand(this)"><img src="pic3.png"></div>
+            </div>
+        </div>
+
+        <div id="modal-video" class="modal">
+            <div class="close-btn" onclick="closeModal('modal-video')">&times;</div>
+            <div class="scrapbook-container">
+                <div class="video-wrapper">
+                    <video id="valentineVideo" controls><source src="kisscam.mp4" type="video/mp4"></video>
+                </div>
+                <h2 class="collage-header">KissCam -`♡´-</h2>
+            </div>
+        </div>
+
+        <div id="modal-letter" class="modal">
+            <div class="close-btn" onclick="closeModal('modal-letter')">&times;</div>
+            <div class="scrapbook-container" style="justify-content: center;">
+                <div class="letter-paper" id="mainLetter" onclick="toggleLetterExpand()">
+                    <h2 style="margin-bottom:20px; color:#d32f2f;">My Love,</h2>
+                    <p style="text-align: center; font-size: 1.8rem; line-height: 1.6;">
+                        With Valentine’s Day just around the corner and your next trip fast approaching, I wanted to take a moment to put into words everything I feel for you. Watching you prepare for another journey makes me realize how lucky I was to be with you.
+                        Every time I watch you on the track, I am in awe of your strength and grace. You have this incredible ability to make the most difficult sprints look like art, and that same relentless drive is what I love most about you. You don’t just run; you chase after everything you want in life with a passion that inspires me every single day.
+
+                        <br><br>
+                        I know that being an athlete means you’re often on the move, and while I’ll miss our quiet moments together, I’m so proud of where your feet are taking you. Distance is just a temporary hurdle for us. No matter how many miles are between us, my heart is always keeping pace with yours.
+                        Safe travels, my love. Go out there and show them bitches who the boss is. I’ll be right here, supporting from afar. Go get them Tiger!!!
+
+                        <br><br>
+                        Forever yours,<br>
+                        Samson Shukuru
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-hehe" class="modal">
+            <div class="scrapbook-container" style="background:var(--bg-color); border:none;">
+                <h2 style="font-family: 'Sacramento'; color:var(--primary-red); margin-bottom: 5px; font-size: 3.0rem;">Shuffling...</h2>
+                <p style="font-size:1.0rem; font-family:'Poppins'; margin-bottom:15px;">Tap the stack!</p>
+                
+                <div class="shuffle-container" id="cardStack">
+                    
+                    <div id="bouquet-popup">
+                        <img src="roses.png" class="bouquet-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+                        <div style="font-size: 100px; display:none;">💐</div>
+                        <h1 style="color: #d32f2f; text-shadow: 2px 2px 0 white; margin-top: 10px;">For You!</h1>
+                    </div>
+
+                    <div class="shuffle-card" onclick="shuffleCard(this)">
+                        <img src="hellok.png" onerror="this.parentElement.classList.add('error-card'); this.parentElement.innerHTML='<div class=\'error-msg\'>Missing: hellok.png</div>'">
+                    </div>
+                    
+                    <div class="shuffle-card" onclick="shuffleCard(this)">
+                        <img src="B2.png" onerror="this.parentElement.classList.add('error-card'); this.parentElement.innerHTML='<div class=\'error-msg\'>Missing: B2.png</div>'">
+                    </div>
+                    
+                    <div class="shuffle-card" onclick="shuffleCard(this)">
+                        <img src="B1.png" onerror="this.parentElement.classList.add('error-card'); this.parentElement.innerHTML='<div class=\'error-msg\'>Missing: B1.png</div>'">
+                    </div>
+                    
+                    <div class="shuffle-card" onclick="shuffleCard(this)">
+                        <img src="B3.png" onerror="this.parentElement.classList.add('error-card'); this.parentElement.innerHTML='<div class=\'error-msg\'>Missing: B3.png</div>'">
+                    </div>
+                    
+                    <div class="shuffle-card" onclick="shuffleCard(this)">
+                        <img src="B4.png" onerror="this.parentElement.classList.add('error-card'); this.parentElement.innerHTML='<div class=\'error-msg\'>Missing: B4.png</div>'">
+                    </div>
+                    
+                    <div class="shuffle-card" onclick="shuffleCard(this)">
+                        <img src="B6.png" style="object-fit: contain;" onerror="this.parentElement.classList.add('error-card'); this.parentElement.innerHTML='<div class=\'error-msg\'>Missing: B6.png</div>'">
+                    </div>
+
+                    <div class="shuffle-card" onclick="shuffleCard(this)">
+                        <video src="Car1.mp4" autoplay loop muted playsinline></video>
+                    </div>
+                    
+                    <div class="shuffle-card" onclick="shuffleCard(this)">
+                        <video src="FB1.mp4" autoplay loop muted playsinline></video>
+                    </div>
+                    
+                    <div class="shuffle-card" onclick="shuffleCard(this)">
+                        <video src="FB2.mp4" autoplay loop muted playsinline></video>
+                    </div>
+                    
+                    <div class="shuffle-card" onclick="shuffleCard(this)">
+                        <video src="FB3.mp4" autoplay loop muted playsinline></video>
+                    </div>
+                    
+                    <div class="shuffle-card" id="finalCard">
+                        <video id="heheVideo" preload="auto" playsinline muted>
+                            <source src="pink.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-music" class="screen">
+            <h2>Our Song</h2>
+            <div class="music-widget">
+                <div class="vinyl" id="vinylRecord"><div class="vinyl-inner"></div></div>
+                <p style="color:white; margin:0; font-family: 'Poppins';">Know You</p>
+                <p style="color:rgba(255,255,255,0.7); font-size:0.8rem; margin-top:5px; font-family: 'Poppins';">Ladipoe - Ft Simi</p>
+                <button class="btn" style="background:white; color:#b71c1c; margin-top:15px; font-size:0.9rem;" onclick="toggleMusic()">⏯ Play/Pause</button>
+            </div>
+            <button class="btn" onclick="openHehe()" style="width: 130px; margin-top:20px; background:transparent; color:#5a3e36; border:1px solid #5a3e36;">hehe</button>
+            <button class="btn" onclick="location.reload()" style="width: 130px; margin-top:10px; background:transparent; color:#5a3e36; border:1px solid #5a3e36;">Restart</button>
+            <button class="btn-back" onclick="showScreen('screen-gifts')">← Back</button>
+        </div>
+    </div>
+
+    <audio id="bg-music" loop><source src="Know You Ft Simi.mp3" type="audio/mp3"></audio>
+    <audio id="hehe-music" loop><source src="JA.mp3" type="audio/mp3"></audio>
+    
+    <audio id="pop-sound"><source src="pop.mp3" type="audio/mp3"></audio>
+
+    <script>
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => {
+                s.classList.remove('active');
+                setTimeout(() => { if (!s.classList.contains('active')) s.style.display = 'none'; }, 500); 
+            });
+            const activeScreen = document.getElementById(id);
+            if (activeScreen) {
+                activeScreen.style.display = 'flex';
+                setTimeout(() => activeScreen.classList.add('active'), 50);
+            }
+        }
+
+        function openEnvelope() {
+            document.querySelector('.envelope-wrapper').classList.add('open');
+            const audio = document.getElementById('bg-music');
+            const vinyl = document.getElementById('vinylRecord');
+            audio.volume = 0.5;
+            audio.play().then(() => { vinyl.classList.add('playing'); }).catch(e => {});
+            setTimeout(() => { showScreen('screen-letter'); }, 1200);
+        }
+
+        function openModal(id) { 
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.style.display = 'flex'; 
+                setTimeout(() => {
+                    modal.classList.add('active');
+                    document.body.classList.add('modal-open');
+                    if (id === 'modal-video') {
+                        const vid = document.getElementById('valentineVideo');
+                        if (vid) vid.play().catch(e => {});
+                    }
+                }, 50);
+            }
+        }
+
+        function closeModal(id) { 
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.classList.remove('modal-open');
+                if (id === 'modal-video') {
+                    const vid = document.getElementById('valentineVideo');
+                    if (vid) vid.pause();
+                }
+                setTimeout(() => { modal.style.display = 'none'; }, 500);
+            }
+        }
+
+        let cardsLeft = 11;
+
+        function openHehe() {
+            const modal = document.getElementById('modal-hehe');
+            const bgMusic = document.getElementById('bg-music');
+            const heheMusic = document.getElementById('hehe-music');
+            const vinyl = document.getElementById('vinylRecord');
+
+            bgMusic.pause();
+            vinyl.classList.remove('playing');
+            heheMusic.volume = 0.6;
+            heheMusic.play().catch(e => console.log(e));
+
+            modal.style.display = 'flex';
+            setTimeout(() => { modal.classList.add('active'); }, 50);
+        }
+
+        function shuffleCard(card) {
+            if (card.classList.contains('swipe')) return;
+            card.classList.add('swipe');
+            cardsLeft--;
+
+            if (cardsLeft === 1) {
+                const vid = document.getElementById('heheVideo');
+                
+                setTimeout(() => {
+                    vid.play().catch(e => {
+                        vid.onclick = () => vid.play();
+                    });
+
+                    vid.onended = function() { 
+                        launchSurprise();
+                    };
+                }, 500);
+            }
+        }
+
+        function launchSurprise() {
+            document.getElementById('hehe-music').pause();
+
+            const pop = document.getElementById('pop-sound');
+            if(pop) pop.play().catch(e => console.log(e));
+
+            document.getElementById('bouquet-popup').classList.add('pop');
+            
+            for(let i=0; i<50; i++) {
+                createConfetti();
+            }
+            setInterval(createConfetti, 100);
+
+            setTimeout(() => {
+                location.reload();
+            }, 5000); 
+        }
+
+        function createConfetti() {
+            const confetti = document.createElement('div');
+            confetti.classList.add('confetti-piece');
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.animationDuration = (Math.random() * 2 + 3) + 's';
+            confetti.style.backgroundColor = ['#ff4081', '#ffd700', '#00e676', '#2979ff'][Math.floor(Math.random() * 4)];
+            document.body.appendChild(confetti);
+            
+            const animation = confetti.animate([
+                { transform: `translateY(0) rotate(0deg)`, opacity: 1 },
+                { transform: `translateY(100vh) rotate(${Math.random()*720}deg)`, opacity: 0 }
+            ], {
+                duration: Math.random() * 2000 + 3000,
+                easing: 'linear'
+            });
+
+            animation.onfinish = () => confetti.remove();
+        }
+
+        function toggleExpand(card) {
+            const isExpanded = card.classList.contains('expanded');
+            document.querySelectorAll('.photo-polaroid').forEach(p => p.classList.remove('expanded'));
+            if (!isExpanded) card.classList.add('expanded');
+        }
+
+        function toggleLetterExpand() { document.getElementById('mainLetter').classList.toggle('expanded'); }
+
+        function toggleMusic() {
+            const audio = document.getElementById('bg-music');
+            const vinyl = document.getElementById('vinylRecord');
+            if (audio.paused) { audio.play(); vinyl.classList.add('playing'); } 
+            else { audio.pause(); vinyl.classList.remove('playing'); }
+        }
+
+        let noCount = 0;
+        function moveNoButton() {
+            const noBtn = document.getElementById('noBtn');
+            const yesBtn = document.getElementById('yesBtn');
+            const texts = ["Are you sure?", "Please?", "Last chance!", "💔"];
+            if(noCount < texts.length) noBtn.innerText = texts[noCount];
+            noCount++;
+            let currentSize = parseFloat(window.getComputedStyle(yesBtn).fontSize);
+            yesBtn.style.fontSize = (currentSize * 1.5) + "px";
+        }
+    </script>
+</body>
+</html>
